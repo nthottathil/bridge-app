@@ -1,218 +1,176 @@
 package com.bridge.social
 
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.bridge.social.model.User
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.viewpager2.widget.ViewPager2
+import com.bridge.social.onboarding.OnboardingAdapter
+import com.bridge.social.onboarding.OnboardingItem
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 
 class MainActivity : AppCompatActivity() {
 
-    private val users = mutableListOf<User>()
-    private val fakeUsers = mutableListOf<User>()
-    private lateinit var adapter: UserAdapter
+    private lateinit var viewPager: ViewPager2
+    private lateinit var tabLayout: TabLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        setupViews()
-        createInitialFakeUsers()
-    }
-
-    private fun setupViews() {
-        findViewById<Button>(R.id.btnStartMatching).setOnClickListener {
-            startMatchingProcess()
-        }
-
-        findViewById<Button>(R.id.btnQuickMatch).setOnClickListener {
-            showQuickMatches()
-        }
-
-        findViewById<FloatingActionButton>(R.id.fabAddFakeUser).setOnClickListener {
-            createFakeUser()
-        }
-
-        val recyclerView = findViewById<RecyclerView>(R.id.rvUsers)
-        adapter = UserAdapter(fakeUsers)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
-
-        updateStats()
-    }
-
-    private fun createInitialFakeUsers() {
-        val initialUsers = listOf(
-            User(1, "Emma Wilson", "emma@example.com",
-                listOf("Networking", "Learn skills"),
-                listOf("Tech", "Music", "Travel"),
-                "Love meeting new people!", "San Francisco", true),
-            User(2, "James Chen", "james@example.com",
-                listOf("Make friends", "Share knowledge"),
-                listOf("Gaming", "Sports", "Cooking"),
-                "Enthusiastic about life", "New York", true),
-            User(3, "Sophia Martinez", "sophia@example.com",
-                listOf("Career growth", "Mentorship"),
-                listOf("Art", "Reading", "Yoga"),
-                "Always learning", "London", true)
-        )
-        fakeUsers.addAll(initialUsers)
-        adapter.notifyDataSetChanged()
-        updateStats()
-    }
-
-    private fun startMatchingProcess() {
-        if (fakeUsers.size < 3) {
-            Toast.makeText(this, "Need at least 3 fake users to start matching!", Toast.LENGTH_LONG).show()
+        // Check if onboarding has been completed
+        val prefs = getSharedPreferences("bridge_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("onboarding_complete", false)) {
+            // Skip to home activity
+            startActivity(Intent(this, HomeActivity::class.java))
+            finish()
             return
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("Matching Process")
-            .setMessage("Ready to join the queue!\n\n" +
-                    "How it works:\n" +
-                    "1. You'll be placed in a queue\n" +
-                    "2. You'll select 1 from 3 profiles (no photos)\n" +
-                    "3. Selected person picks next\n" +
-                    "4. Process continues until 4 people matched\n" +
-                    "5. Photos revealed after group complete!")
-            .setPositiveButton("Join Queue") { _, _ ->
-                simulateMatching()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        setContentView(R.layout.activity_main)
+        setupOnboarding()
     }
 
-    private fun simulateMatching() {
-        // Show first selection
-        val candidates = fakeUsers.shuffled().take(3)
-        val message = buildString {
-            appendLine("Your turn to select!")
-            appendLine("\nChoose 1 person from these 3:\n")
-            candidates.forEachIndexed { index, user ->
-                appendLine("${index + 1}. Goals: ${user.goals.joinToString(", ")}")
-                appendLine("   Interests: ${user.interests.joinToString(", ")}")
-                appendLine("   Location: ${user.location}\n")
+    private fun setupOnboarding() {
+        viewPager = findViewById(R.id.viewPager)
+        tabLayout = findViewById(R.id.tabLayout)
+
+        val onboardingItems = listOf(
+            // Screen 1: Welcome with name input
+            OnboardingItem(
+                title = "Welcome to Bridge",
+                subtitle = "Let's get to know you better",
+                buttonText = null,
+                showNameInput = true
+            ),
+
+            // Screen 2: Goals selection
+            OnboardingItem(
+                title = "What are your goals?",
+                subtitle = "Select what brings you to Bridge",
+                buttonText = null,
+                showGoalsSelection = true
+            ),
+
+            // Screen 3: Gender selection
+            OnboardingItem(
+                title = "Which gender best describes you?",
+                subtitle = "This helps us personalize your experience",
+                buttonText = null,
+                showGenderSelection = true
+            ),
+
+            // Screen 4: Nationality
+            OnboardingItem(
+                title = "What's your nationality?",
+                subtitle = "Connect with people from around the world",
+                buttonText = null,
+                showNationalitySelection = true
+            ),
+
+            // Screen 5: Email (no verification code)
+            OnboardingItem(
+                title = "What's your email?",
+                subtitle = "We'll use this to save your profile",
+                buttonText = null,
+                showEmailInput = true,
+                showVerificationCode = false // Changed to false
+            ),
+
+            // Screen 6: Personality Quiz Q1
+            OnboardingItem(
+                title = "In your free time, you usually...",
+                subtitle = "Help us understand your personality",
+                buttonText = null,
+                showPersonalityQuiz = true
+            ),
+
+            // Screen 7: Social gathering question
+            OnboardingItem(
+                title = "At social gatherings, you're usually...",
+                subtitle = "How do you interact with others?",
+                buttonText = null,
+                showSocialQuestion = true
+            ),
+
+            // Screen 8: Meeting people question
+            OnboardingItem(
+                title = "When meeting new people...",
+                subtitle = "How do you connect?",
+                buttonText = null,
+                showMeetingQuestion = true
+            ),
+
+            // Screen 9: Project question
+            OnboardingItem(
+                title = "In a new project or event...",
+                subtitle = "What's your role?",
+                buttonText = null,
+                showProjectQuestion = true
+            ),
+
+            // Screen 10: Interests selection
+            OnboardingItem(
+                title = "What are your interests?",
+                subtitle = "Select at least 3 to find like-minded people",
+                buttonText = null,
+                showInterestsSelection = true
+            ),
+
+            // Screen 11: Connection goal
+            OnboardingItem(
+                title = "What's your connection goal?",
+                subtitle = "Be specific about what you're looking for",
+                buttonText = null,
+                showConnectionGoal = true
+            ),
+
+            // Screen 12: Skills
+            OnboardingItem(
+                title = "What skills can you share?",
+                subtitle = "Help others while you connect",
+                buttonText = null,
+                showSkillsInput = true
+            ),
+
+            // Screen 13: Bio
+            OnboardingItem(
+                title = "Describe yourself",
+                subtitle = "Make a memorable first impression",
+                buttonText = null,
+                showBioInput = true
+            ),
+
+            // Screen 14: Location
+            OnboardingItem(
+                title = "Where are you located?",
+                subtitle = "Find people near you",
+                buttonText = null,
+                showLocationInput = true
+            )
+        )
+
+        val adapter = OnboardingAdapter(this, onboardingItems) { isLastPage ->
+            if (isLastPage) {
+                // Mark onboarding as complete and go to home
+                val prefs = getSharedPreferences("bridge_prefs", MODE_PRIVATE)
+                prefs.edit().putBoolean("onboarding_complete", true).apply()
+
+                startActivity(Intent(this, HomeActivity::class.java))
+                finish()
+            } else {
+                // Move to next page
+                val currentItem = viewPager.currentItem
+                if (currentItem < onboardingItems.size - 1) {
+                    viewPager.currentItem = currentItem + 1
+                }
             }
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("Select Your Match")
-            .setMessage(message)
-            .setPositiveButton("Select #1") { _, _ ->
-                completeMatching(candidates[0])
-            }
-            .setNegativeButton("Select #2") { _, _ ->
-                completeMatching(candidates[1])
-            }
-            .setNeutralButton("Select #3") { _, _ ->
-                completeMatching(candidates[2])
-            }
-            .show()
+        viewPager.adapter = adapter
+        viewPager.isUserInputEnabled = false // Disable swipe to force button usage
+
+        TabLayoutMediator(tabLayout, viewPager) { _, _ ->
+            // Empty implementation - dots are handled by tab selector drawable
+        }.attach()
     }
-
-    private fun completeMatching(selected: User) {
-        val finalGroup = mutableListOf(selected)
-        finalGroup.addAll(fakeUsers.shuffled().filter { it.id != selected.id }.take(2))
-        finalGroup.add(User(99, "You", "you@example.com",
-            listOf("Your goals"), listOf("Your interests"), "Your bio", "Your location", false))
-
-        val message = buildString {
-            appendLine("Match Complete! Your group of 4:\n")
-            finalGroup.forEach { user ->
-                appendLine("• ${user.name}")
-                appendLine("  ${user.bio}")
-                appendLine("  Location: ${user.location}\n")
-            }
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Group Formed!")
-            .setMessage(message)
-            .setPositiveButton("Schedule Meeting", null)
-            .setNegativeButton("Close", null)
-            .show()
-    }
-
-    private fun showQuickMatches() {
-        val message = buildString {
-            appendLine("Top 3 Matches for You:\n")
-            fakeUsers.take(3).forEach { user ->
-                appendLine("• ${user.name}")
-                appendLine("  Interests: ${user.interests.joinToString(", ")}")
-                appendLine("  Goals: ${user.goals.joinToString(", ")}\n")
-            }
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Quick Match Results")
-            .setMessage(message)
-            .setPositiveButton("Start Matching", null)
-            .setNegativeButton("Close", null)
-            .show()
-    }
-
-    private fun createFakeUser() {
-        val newId = (fakeUsers.maxOfOrNull { it.id } ?: 0) + 1
-        val names = listOf("Alex", "Morgan", "Taylor", "Jordan", "Casey")
-        val goals = listOf(
-            listOf("Networking", "Learn skills"),
-            listOf("Make friends", "Find mentors"),
-            listOf("Share knowledge", "Build community")
-        )
-        val interests = listOf(
-            listOf("Tech", "Gaming", "Music"),
-            listOf("Sports", "Travel", "Food"),
-            listOf("Art", "Reading", "Movies")
-        )
-        val locations = listOf("Boston", "Seattle", "Austin", "Denver", "Miami")
-
-        val randomUser = User(
-            id = newId,
-            name = "${names.random()} Test",
-            email = "test$newId@example.com",
-            goals = goals.random(),
-            interests = interests.random(),
-            bio = "Auto-generated test user #$newId",
-            location = locations.random(),
-            isFakeUser = true
-        )
-
-        fakeUsers.add(randomUser)
-        adapter.notifyItemInserted(fakeUsers.size - 1)
-        updateStats()
-
-        Toast.makeText(this, "Created: ${randomUser.name}", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun updateStats() {
-        findViewById<TextView>(R.id.tvStats).text =
-            "Fake Users: ${fakeUsers.size} | Ready to Match: ${fakeUsers.size >= 3}"
-    }
-}
-
-// Simple adapter for RecyclerView
-class UserAdapter(private val users: List<User>) : RecyclerView.Adapter<UserAdapter.ViewHolder>() {
-
-    class ViewHolder(view: android.view.View) : RecyclerView.ViewHolder(view) {
-        val textView: TextView = view.findViewById(android.R.id.text1)
-    }
-
-    override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
-        val view = android.view.LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_1, parent, false)
-        return ViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val user = users[position]
-        holder.textView.text = "${user.name} - ${user.interests.joinToString(", ")}"
-    }
-
-    override fun getItemCount() = users.size
 }

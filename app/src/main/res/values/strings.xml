@@ -1,3 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bridge</string>
+    
+    <!-- Onboarding -->
+    <string name="onboarding_welcome">Welcome to Bridge</string>
+    <string name="onboarding_subtitle">Connect in curated groups of 4 like-minded people</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_matches">Matches</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_profile">Profile</string>
+    
+    <!-- Buttons -->
+    <string name="continue_button">Continue</string>
+    <string name="get_started">Get Started</string>
+    <string name="start_matching">Start Matching</string>
+    <string name="quick_preview">Quick Preview</string>
+    <string name="select_person">Select This Person</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Matching -->
+    <string name="matching_title">Bridge Matching</string>
+    <string name="matching_subtitle">Connect in curated groups of 4</string>
+    <string name="test_users">Test Users</string>
+    <string name="add_test_user">Add Test User</string>
 </resources>
